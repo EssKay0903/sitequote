@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SiteQuote: compare three supplier quotes by landed cost</title>
+<title>SiteQuote</title>
 <style>
 :root{--bg:#eceee9;--surf:#fbfbf8;--ink:#1c2430;--mute:#5b6572;--line:#d3d7d0;--acc:#1d4f91;--good:#1f6b48;--goodbg:#dcefe4;--warn:#9a4a00;--warnbg:#fbe8d2;--bad:#a12626;--badbg:#f7dcdc;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181e;--surf:#1d232c;--ink:#e8ebef;--mute:#9aa4b1;--line:#333c48;--acc:#7fb0ee;--good:#6fcf9d;--goodbg:#173626;--warn:#f0b266;--warnbg:#3b2a14;--bad:#f08a8a;--badbg:#3d1c1c;color-scheme:dark}}
@@ -41,8 +42,8 @@ pre{white-space:pre-wrap;font:inherit;background:var(--bg);border:1px solid var(
 <body>
 <div class="wrap">
   <h1>SiteQuote</h1>
-  <p class="sub">Pick the material, enter three supplier quotes, and see what each really costs delivered to site.</p>
-<nav role="tablist">
+  <p class="sub">Pick the material, enter supplier quotes, and see what each really costs delivered to site.</p>
+  <nav role="tablist">
     <button role="tab" id="t1" aria-selected="true">1. Requirements and quotes</button>
     <button role="tab" id="t2" aria-selected="false">2. Comparison</button>
     <button role="tab" id="t3" aria-selected="false">3. Decision summary</button>
@@ -70,6 +71,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--bg);border:1px solid var(
     </div>
     <div id="quotes"></div>
     <button class="btn" id="go">Compare quotes</button>
+    <button class="btn alt" id="reset" type="button">Reset all</button>
   </section>
   <section id="s2" hidden></section>
   <section id="s3" hidden></section>
@@ -106,11 +108,13 @@ var CAT=[
 {c:"Timber & Boards",m:[
  {n:"Plywood",s:["12 mm","18 mm"],u:{"sq ft":1,"sheet (8x4 ft)":32},d:"sheet (8x4 ft)"}]}
 ];
+
 var S={cat:0,mi:0,spec:"OPC 53",cmp:"tonne",qty:"10",cn:"",cs:"",cu:"",cpn:"",cpq:"",q:""};
 var Q=[
  {name:"Supplier A",price:"365",unit:"50 kg bag",pack:"",fm:"fixed",fv:"4500",extra:"",days:"2",avail:"10",aunit:"tonne",notes:"Unloading included"},
  {name:"Supplier B",price:"352",unit:"50 kg bag",pack:"",fm:"fixed",fv:"9000",extra:"",days:"4",avail:"8",aunit:"tonne",notes:""},
  {name:"Supplier C",price:"7050",unit:"tonne",pack:"",fm:"unit",fv:"300",extra:"",days:"3",avail:"10",aunit:"tonne",notes:""}];
+
 var $=function(i){return document.getElementById(i)};
 function E(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function A(s){return E(String(s)).replace(/"/g,"&quot;")}
@@ -240,6 +244,29 @@ function show(n){[1,2,3].forEach(function(i){$("s"+i).hidden=i!=n;$("t"+i).setAt
  if(n==2)renderCompare();if(n==3)renderSummary();window.scrollTo(0,0)}
 [1,2,3].forEach(function(i){$("t"+i).onclick=function(){show(i)}});
 $("go").onclick=function(){show(2)};
+
+// Reset all user-entered values while preserving HTML placeholders.
+function resetAll(){
+  S={cat:0,mi:0,spec:"OPC 53",cmp:"tonne",qty:"",cn:"",cs:"",cu:"",cpn:"",cpq:"",q:""};
+  Q=[
+    {name:"",price:"",unit:"50 kg bag",pack:"",fm:"fixed",fv:"",extra:"",days:"",avail:"",aunit:"tonne",notes:""},
+    {name:"",price:"",unit:"50 kg bag",pack:"",fm:"fixed",fv:"",extra:"",days:"",avail:"",aunit:"tonne",notes:""},
+    {name:"",price:"",unit:"tonne",pack:"",fm:"unit",fv:"",extra:"",days:"",avail:"",aunit:"tonne",notes:""}
+  ];
+  $("srch").value="";
+  $("qty").value="";
+  document.querySelectorAll(".cx input").forEach(function(input){input.value=""});
+  fillCat();
+  fillMat();
+  fillDeps();
+  fixUnits();
+  renderQuotes();
+  $("s2").innerHTML="";
+  $("s3").innerHTML="";
+  show(1);
+}
+$("reset").onclick=resetAll;
+
 $("qty").value=S.qty;fillCat();fillMat();fillDeps();renderQuotes();
 </script>
 </body>
