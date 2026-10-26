@@ -36,7 +36,7 @@ Because the application is a static HTML file, no server or build command is req
 ## Project files
 
 - `index.html` — complete working prototype.
-- `PRD.md` — product requirements for the current version.
+- `SiteQuote_PRD.md` — product requirements for the current version.
 - `README.md` — setup and publishing instructions.
 
 ## Scope limitations
