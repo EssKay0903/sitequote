@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SiteQuote: compare three supplier quotes by landed cost</title>
+<style>
+:root{--bg:#eceee9;--surf:#fbfbf8;--ink:#1c2430;--mute:#5b6572;--line:#d3d7d0;--acc:#1d4f91;--good:#1f6b48;--goodbg:#dcefe4;--warn:#9a4a00;--warnbg:#fbe8d2;--bad:#a12626;--badbg:#f7dcdc;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181e;--surf:#1d232c;--ink:#e8ebef;--mute:#9aa4b1;--line:#333c48;--acc:#7fb0ee;--good:#6fcf9d;--goodbg:#173626;--warn:#f0b266;--warnbg:#3b2a14;--bad:#f08a8a;--badbg:#3d1c1c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14181e;--surf:#1d232c;--ink:#e8ebef;--mute:#9aa4b1;--line:#333c48;--acc:#7fb0ee;--good:#6fcf9d;--goodbg:#173626;--warn:#f0b266;--warnbg:#3b2a14;--bad:#f08a8a;--badbg:#3d1c1c;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 12px;max-width:62ch}
+.tag{display:inline-block;background:var(--warnbg);color:var(--warn);border-radius:4px;padding:2px 8px;font-size:.8rem;margin-bottom:12px}
+nav{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:18px;overflow-x:auto}
+nav button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 12px;font:inherit;color:var(--mute);cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--ink);border-color:var(--acc);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}
+.row{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mute);gap:4px;flex:1 1 150px;min-width:0}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
+h2{font-size:1.05rem;margin:0}
+.btn{background:var(--acc);color:var(--surf);border:0;border-radius:6px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}
+.btn.alt{background:none;color:var(--acc);border:1px solid var(--acc)}
+.hint{font-size:.85rem;color:var(--mute);margin:8px 0 0}
+.st{font-size:.85rem;margin:10px 0 0;color:var(--mute)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--mute);font-size:.85rem}
+td.best,th.best{background:var(--goodbg)}
+.big{font-size:1.2rem;font-weight:700}
+.chip{display:inline-block;border-radius:4px;padding:2px 7px;font-size:.78rem;margin:2px 4px 2px 0}
+.chip.g{background:var(--goodbg);color:var(--good)}.chip.w{background:var(--warnbg);color:var(--warn)}.chip.b{background:var(--badbg);color:var(--bad)}
+pre{white-space:pre-wrap;font:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:14px;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SiteQuote</h1>
+  <p class="sub">Pick the material, enter three supplier quotes, and see what each really costs delivered to site.</p>
+<nav role="tablist">
+    <button role="tab" id="t1" aria-selected="true">1. Requirements and quotes</button>
+    <button role="tab" id="t2" aria-selected="false">2. Comparison</button>
+    <button role="tab" id="t3" aria-selected="false">3. Decision summary</button>
+  </nav>
+
+  <section id="s1">
+    <div class="card" id="top">
+      <h2>Purchase requirement</h2>
+      <div class="row">
+        <label>Category<select id="cat"></select></label>
+        <label class="co">Search materials<input id="srch" type="search" placeholder="e.g. TMT, AAC, plywood"></label>
+        <label class="co">Material<select id="mat"></select></label>
+        <label class="co">Specification<select id="spec"></select></label>
+        <label class="co">Comparison unit<select id="cmp"></select></label>
+        <label>Required quantity<input id="qty" data-s="qty" type="number" min="0" step="any"></label>
+      </div>
+      <div class="row cx" hidden>
+        <label>Custom material name<input data-s="cn" type="text" placeholder="e.g. Waterproofing compound"></label>
+        <label>Specification<input data-s="cs" type="text" placeholder="e.g. 20 kg, polymer based"></label>
+        <label>Comparison unit<input data-s="cu" type="text" placeholder="e.g. kg, litre, piece"></label>
+        <label>Package name (optional)<input data-s="cpn" type="text" placeholder="e.g. 20 kg bucket"></label>
+        <label>Units in one package<input data-s="cpq" type="number" min="0" step="any" placeholder="e.g. 20"></label>
+      </div>
+      <p class="hint">The material and quantity apply to all three suppliers.</p>
+    </div>
+    <div id="quotes"></div>
+    <button class="btn" id="go">Compare quotes</button>
+  </section>
+  <section id="s2" hidden></section>
+  <section id="s3" hidden></section>
+</div>
+
+<script>
+var CAT=[
+{c:"Cement & Binders",m:[
+ {n:"Cement",s:["OPC 43","OPC 53","PPC","PSC"],u:{"tonne":1,"kg":.001,"50 kg bag":.05},d:"tonne"},
+ {n:"Ready-mix concrete",s:["M20","M25","M30","M35"],u:{"cubic metre":1},d:"cubic metre"},
+ {n:"Fly ash",s:["Bulk","Bagged"],u:{"tonne":1,"kg":.001},d:"tonne"}]},
+{c:"Steel & Metals",m:[
+ {n:"TMT bars",s:["Fe 500","Fe 500D","Fe 550D","Fe 600"],u:{"tonne":1,"kg":.001},d:"tonne"},
+ {n:"Structural steel",s:["Angle","Channel","ISMB beam","MS plate"],u:{"tonne":1,"kg":.001},d:"tonne"},
+ {n:"Binding wire",s:["18 gauge"],u:{"kg":1,"25 kg coil":25},d:"kg"}]},
+{c:"Aggregates & Sand",m:[
+ {n:"River sand",s:["Fine","Medium","Coarse"],u:{"cubic metre":1,"brass (100 cft)":2.83},d:"cubic metre"},
+ {n:"M-sand",s:["Plastering","Concrete"],u:{"cubic metre":1,"brass (100 cft)":2.83},d:"cubic metre"},
+ {n:"Stone aggregate",s:["10 mm","20 mm","40 mm"],u:{"cubic metre":1,"brass (100 cft)":2.83},d:"cubic metre"}]},
+{c:"Bricks & Blocks",m:[
+ {n:"Clay brick",s:["Class 5","Class 7.5","Class 10"],u:{"piece":1,"1,000 pieces":1000},d:"piece"},
+ {n:"Fly ash brick",s:["230 mm standard"],u:{"piece":1,"1,000 pieces":1000},d:"piece"},
+ {n:"AAC block",s:["4 inch","6 inch","8 inch"],u:{"piece":1,"1,000 pieces":1000},d:"piece"}]},
+{c:"Tiles & Flooring",m:[
+ {n:"Vitrified tiles",s:["600x600 mm","800x800 mm","600x1200 mm"],u:{"sq ft":1,"sq m":10.764},d:"sq ft"},
+ {n:"Ceramic wall tiles",s:["300x450 mm","300x600 mm"],u:{"sq ft":1,"sq m":10.764},d:"sq ft"},
+ {n:"Tile adhesive",s:["Standard","Premium"],u:{"kg":1,"20 kg bag":20,"tonne":1000},d:"kg"}]},
+{c:"Plumbing & Electrical",m:[
+ {n:"PVC pipe",s:["1/2 inch","3/4 inch","1 inch","2 inch"],u:{"metre":1,"3 m length":3,"6 m length":6},d:"metre"},
+ {n:"Copper wire",s:["1.5 sq mm","2.5 sq mm","4 sq mm"],u:{"metre":1,"90 m coil":90},d:"metre"}]},
+{c:"Paints & Finishes",m:[
+ {n:"Interior emulsion",s:["Economy","Premium"],u:{"litre":1,"4 L can":4,"10 L bucket":10,"20 L bucket":20},d:"litre"},
+ {n:"Wall putty",s:["White cement based"],u:{"kg":1,"20 kg bag":20,"40 kg bag":40},d:"kg"}]},
+{c:"Timber & Boards",m:[
+ {n:"Plywood",s:["12 mm","18 mm"],u:{"sq ft":1,"sheet (8x4 ft)":32},d:"sheet (8x4 ft)"}]}
+];
+var S={cat:0,mi:0,spec:"OPC 53",cmp:"tonne",qty:"10",cn:"",cs:"",cu:"",cpn:"",cpq:"",q:""};
+var Q=[
+ {name:"Supplier A",price:"365",unit:"50 kg bag",pack:"",fm:"fixed",fv:"4500",extra:"",days:"2",avail:"10",aunit:"tonne",notes:"Unloading included"},
+ {name:"Supplier B",price:"352",unit:"50 kg bag",pack:"",fm:"fixed",fv:"9000",extra:"",days:"4",avail:"8",aunit:"tonne",notes:""},
+ {name:"Supplier C",price:"7050",unit:"tonne",pack:"",fm:"unit",fv:"300",extra:"",days:"3",avail:"10",aunit:"tonne",notes:""}];
+var $=function(i){return document.getElementById(i)};
+function E(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function A(s){return E(String(s)).replace(/"/g,"&quot;")}
+function inr(x){return "\u20B9"+(Math.abs(x)<100?x.toFixed(2):Math.round(x).toLocaleString("en-IN"))}
+function num(x){return x===""||x==null?NaN:parseFloat(x)}
+function nf(x){return (+x).toLocaleString("en-IN",{maximumFractionDigits:4})}
+function mat(){return S.cat<0?null:CAT[S.cat].m[S.mi]}
+function units(){var m=mat();if(m)return m.u;var u={},c=S.cu.trim(),n=S.cpn.trim(),q=num(S.cpq);if(c)u[c]=1;if(n&&q>0&&n!=c)u[n]=q;return u}
+function cmpU(){return S.cat<0?S.cu.trim():S.cmp}
+function label(){return S.cat<0?(S.cn.trim()||"Custom material")+(S.cs.trim()?" ("+S.cs.trim()+")":""):mat().n+" ("+S.spec+")"}
+
+/* ---------- requirement card ---------- */
+function opts(el,list,cur){el.innerHTML=list.map(function(o){return '<option value="'+A(o[0])+'"'+(o[0]==cur?" selected":"")+'>'+E(o[1])+'</option>'}).join("")}
+function fillCat(){opts($("cat"),CAT.map(function(c,i){return [i,c.c]}).concat([[-1,"Other / Custom material"]]),S.cat)}
+function fillMat(){
+ var q=S.q.trim().toLowerCase(),l=[];
+ CAT.forEach(function(c,ci){c.m.forEach(function(m,mi){
+  if(q?(c.c+" "+m.n+" "+m.s.join(" ")).toLowerCase().indexOf(q)>-1:ci==S.cat)l.push([ci+"|"+mi,(q?c.c+": ":"")+m.n])})});
+ if(!l.length)l=[["","No match"]];
+ opts($("mat"),l,S.cat+"|"+S.mi)}
+function fillDeps(){
+ var m=mat();
+ if(m){opts($("spec"),m.s.map(function(s){return [s,s]}),S.spec);opts($("cmp"),Object.keys(m.u).map(function(k){return [k,k]}),S.cmp)}
+ var cu=S.cat<0;document.querySelectorAll(".co").forEach(function(e){e.hidden=cu});document.querySelectorAll(".cx").forEach(function(e){e.hidden=!cu})}
+function fixUnits(){var U=units(),c=cmpU();Q.forEach(function(q){["unit","aunit"].forEach(function(k){if(q[k]!="__c"&&!(q[k] in U))q[k]=c})})}
+function pick(v){var p=v.split("|");if(p.length<2)return;S.cat=+p[0];S.mi=+p[1];S.spec=mat().s[0];S.cmp=mat().d;$("cat").value=S.cat;fillDeps();fixUnits();renderQuotes()}
+$("cat").onchange=function(){S.cat=+this.value;S.q="";$("srch").value="";S.mi=0;if(mat()){S.spec=mat().s[0];S.cmp=mat().d}fillMat();fillDeps();fixUnits();renderQuotes()};
+$("srch").oninput=function(){S.q=this.value;fillMat()};
+$("mat").onchange=function(){pick(this.value)};
+$("spec").onchange=function(){S.spec=this.value};
+$("cmp").onchange=function(){S.cmp=this.value;fixUnits();renderQuotes()};
+$("top").addEventListener("input",function(e){var k=e.target.dataset.s;if(!k)return;S[k]=e.target.value;
+ if(k=="cu"||k=="cpn"||k=="cpq"){fixUnits();renderQuotes()}else status()});
+
+/* ---------- supplier quotes ---------- */
+function fld(i,k,l,t,x){return '<label>'+l+'<input data-i="'+i+'" data-k="'+k+'" type="'+t+'" '+(x||"")+' value="'+A(Q[i][k])+'"></label>'}
+function sel(i,k,l,list){return '<label>'+l+'<select data-i="'+i+'" data-k="'+k+'">'+list.map(function(o){return '<option value="'+A(o[0])+'"'+(o[0]==Q[i][k]?" selected":"")+'>'+E(o[1])+'</option>'}).join("")+'</select></label>'}
+function renderQuotes(){
+ var c=cmpU()||"unit",ul=Object.keys(units()).map(function(k){return [k,k]}).concat([["__c","Custom package"]]);
+ $("quotes").innerHTML=Q.map(function(q,i){
+  var fl=q.fm=="fixed"?"Freight (\u20B9)":q.fm=="unit"?"Freight (\u20B9 per "+E(c)+")":"Freight (% of material cost)";
+  return '<div class="card"><h2>Supplier '+(i+1)+'</h2><div class="row">'+
+  fld(i,"name","Supplier name","text")+fld(i,"price","Quoted price (\u20B9)","number",'min="0" step="any"')+sel(i,"unit","Price is per",ul)+
+  ((q.unit=="__c"||q.aunit=="__c")?fld(i,"pack","One custom package = how many "+E(c)+"?","number",'min="0" step="any"'):"")+
+  sel(i,"fm","Freight method",[["fixed","Fixed total"],["unit","Per "+c],["pct","% of material cost"]])+fld(i,"fv",fl,"number",'min="0" step="any"')+
+  fld(i,"extra","Additional charges (\u20B9, optional)","number",'min="0" step="any"')+fld(i,"days","Delivery time (days)","number",'min="0" step="1"')+
+  fld(i,"avail","Available quantity","number",'min="0" step="any"')+sel(i,"aunit","Available quantity unit",ul)+
+  fld(i,"notes","Notes (optional)","text")+'</div><p class="st" id="st'+i+'"></p></div>'}).join("");
+ status()}
+$("quotes").addEventListener("input",function(e){var t=e.target,i=t.dataset.i,k=t.dataset.k;if(i==null)return;Q[i][k]=t.value;
+ if(t.tagName=="SELECT")renderQuotes();else status()});
+
+/* ---------- calculation ---------- */
+function calc(){
+ var U=units(),c=cmpU(),qty=num(S.qty),uc=U[c],errs=[];
+ if(!(qty>0))errs.push("Required quantity must be above zero.");
+ if(S.cat<0){if(!S.cn.trim())errs.push("Enter the custom material name.");if(!c)errs.push("Enter a comparison unit.");
+  if(S.cpn.trim()&&!(num(S.cpq)>0))errs.push("Enter how many "+(c||"units")+" one "+S.cpn.trim()+" contains.")}
+ var rows=Q.map(function(q,i){
+  if(!q.name.trim())errs.push("Enter a name for supplier "+(i+1)+".");
+  var r={q:q,i:i,st:"ok",why:[]},fac=function(u){return u=="__c"?num(q.pack)*uc:U[u]};
+  var p=num(q.price),f=fac(q.unit),fv=num(q.fv),ex=q.extra===""?0:num(q.extra),d=num(q.days),av=num(q.avail),fa=fac(q.aunit);
+  if(!(p>0))r.why.push("price missing or not above zero");
+  if(!(f>0)||!(fa>0))r.why.push("package size or unit missing");
+  if(!(fv>=0))r.why.push("freight missing");
+  if(!(ex>=0))r.why.push("additional charges invalid");
+  if(!(d>=0))r.why.push("delivery days missing");
+  if(!(av>0))r.why.push("available quantity missing");
+  if(!uc||!(qty>0)&&!r.why.length)r.why.push("check the requirement above");
+  if(r.why.length){r.st="bad";return r}
+  r.pc=p/f*uc;r.pack=f/uc;r.sub=r.pc*qty;
+  r.fr=q.fm=="fixed"?fv:q.fm=="unit"?fv*qty:r.sub*fv/100;r.ex=ex;r.total=r.sub+r.fr+ex;r.per=r.total/qty;r.av=av*fa/uc;r.d=d;
+  r.work=r.pack==1?"Already per "+c:inr(p)+" per "+(q.unit=="__c"?"custom package":q.unit)+" \u00F7 "+nf(r.pack)+" "+c+" = "+inr(r.pc)+" per "+c;
+  if(r.av<qty){r.st="part";r.why.push("covers "+nf(r.av)+" of "+nf(qty)+" "+c)}
+  return r});
+ var ok=rows.filter(function(r){return r.st=="ok"}),ch=null,fs=null;
+ if(ok.length){ch=ok.reduce(function(a,b){return b.total<a.total?b:a});fs=ok.reduce(function(a,b){return b.d<a.d||(b.d==a.d&&b.total<a.total)?b:a})}
+ return {c:c,qty:qty,errs:errs,rows:rows,ok:ok,ch:ch,fs:fs}}
+
+function status(){var C=calc();C.rows.forEach(function(r){var el=$("st"+r.i);if(!el)return;
+ el.textContent=r.st=="bad"?"Not usable yet: "+r.why.join(", ")+".":"Normalised: "+inr(r.pc)+" per "+C.c+". "+(r.st=="ok"?"Covers the full order.":"Cannot fulfil the full order: "+r.why.join(", ")+".")})}
+
+/* ---------- screen 2 ---------- */
+function renderCompare(){
+ var C=calc(),c=C.c,h="";
+ if(C.errs.length){$("s2").innerHTML='<div class="card"><span class="chip b">Fix these first</span><ul>'+C.errs.map(function(e){return '<li>'+E(e)+'</li>'}).join("")+'</ul></div><button class="btn alt" id="back">Edit requirements and quotes</button>';$("back").onclick=function(){show(1)};return}
+ if(!C.ok.length)h+='<div class="card"><span class="chip b">No viable quote</span> No supplier can fulfil the full order with a complete quote. Ask for updated quotes.</div>';
+ h+='<div class="card"><h2>'+E(label())+': '+nf(C.qty)+' '+E(c)+'</h2></div><div class="card tw"><table><thead><tr><th></th>'+C.rows.map(function(r){return '<th'+(r===C.ch?' class="best"':'')+'>'+E(r.q.name)+'</th>'}).join("")+'</tr></thead><tbody>';
+ function tr(l,fn,raw){h+='<tr><th scope="row">'+l+'</th>'+C.rows.map(function(r){return '<td'+(r===C.ch?' class="best"':'')+'>'+(r.st=="bad"&&!raw?'<span class="hint">-</span>':fn(r))+'</td>'}).join("")+'</tr>'}
+ tr("Quoted price",function(r){return inr(num(r.q.price))+" per "+E(r.q.unit=="__c"?"custom package":r.q.unit)},1);
+ tr("Normalised price per "+E(c),function(r){return inr(r.pc)});
+ tr("How it was converted",function(r){return '<span class="hint">'+E(r.work)+'</span>'});
+ tr("Material subtotal",function(r){return inr(r.sub)});
+ tr("Freight",function(r){return inr(r.fr)+'<br><span class="hint">'+(r.q.fm=="fixed"?"fixed total":r.q.fm=="unit"?inr(num(r.q.fv))+" per "+E(c):nf(num(r.q.fv))+"% of material")+'</span>'});
+ tr("Additional charges",function(r){return inr(r.ex)});
+ tr("Total landed cost",function(r){return '<b>'+inr(r.total)+'</b>'});
+ tr("Landed cost per "+E(c),function(r){return '<span class="big">'+inr(r.per)+'</span>'});
+ tr("Available quantity",function(r){return nf(r.av)+" "+E(c)});
+ tr("Delivery time",function(r){return r.d+" days"});
+ tr("Notes",function(r){return E(r.q.notes)||'<span class="hint">-</span>'},1);
+ tr("Flags",function(r){var s="";
+  if(r===C.ch)s+='<span class="chip g">Cheapest viable</span>';if(r===C.fs)s+='<span class="chip g">Fastest viable</span>';
+  if(r.st=="bad")s+='<span class="chip b">Incomplete: '+E(r.why.join(", "))+'</span>';
+  if(r.st=="part")s+='<span class="chip w">Cannot fulfil full order: '+E(r.why.join(", "))+'</span>';
+  return s||'<span class="hint">None</span>'},1);
+ h+='</tbody></table></div>';
+ if(C.ch)h+='<div class="card"><h2>Recommendation</h2><p style="margin:8px 0 0">Lowest landed cost among suppliers who can fulfil the full order: <b>'+E(C.ch.q.name)+'</b> at '+inr(C.ch.per)+' per '+E(c)+'.'+(C.fs!==C.ch?' Fastest viable: <b>'+E(C.fs.q.name)+'</b> ('+C.fs.d+' days, '+inr(C.fs.total-C.ch.total)+' more in total).':' It is also the fastest viable option.')+'</p></div>';
+ h+='<button class="btn" id="to3">Create decision summary</button> <button class="btn alt" id="back">Edit quotes</button>';
+ $("s2").innerHTML=h;$("to3").onclick=function(){show(3)};$("back").onclick=function(){show(1)}}
+
+/* ---------- screen 3 ---------- */
+function renderSummary(){
+ var C=calc(),c=C.c;
+ if(C.errs.length||!C.ch){$("s3").innerHTML='<div class="card"><span class="chip b">No summary yet</span> '+(C.errs.length?E(C.errs.join(" ")):"No supplier can fulfil the full order with a complete quote.")+'</div><button class="btn alt" id="back">Edit requirements and quotes</button>';$("back").onclick=function(){show(1)};return}
+ var b=C.ch,t="Material: "+label()+"\nRequired quantity: "+nf(C.qty)+" "+c+"\n\nRecommended supplier: "+b.q.name+"\n- Total landed cost: "+inr(b.total)+"\n- Landed cost per "+c+": "+inr(b.per)+"\n- Delivery: "+b.d+" days\n";
+ var oth=C.ok.filter(function(r){return r!==b});
+ if(oth.length)t+="\nCompared with other viable quotes:\n"+oth.map(function(r){return "- "+r.q.name+": "+inr(r.total)+" ("+inr(r.per)+" per "+c+"), "+inr(r.total-b.total)+" more ("+((r.total-b.total)/b.total*100).toFixed(1)+"%), "+r.d+" days"}).join("\n")+"\n";
+ if(C.fs!==b)t+="\nFastest alternative: "+C.fs.q.name+", "+C.fs.d+" days at "+inr(C.fs.total)+" in total.\n";
+ var ex=C.rows.filter(function(r){return r.st!="ok"});
+ if(ex.length)t+="\nNot considered:\n"+ex.map(function(r){return "- "+r.q.name+": "+(r.st=="bad"?"incomplete quote ("+r.why.join(", ")+")":"cannot fulfil the full order ("+r.why.join(", ")+")")}).join("\n")+"\n";
+ t+="\nLanded cost = material + freight + additional charges. Basis: lowest total landed cost among suppliers able to fulfil the full order. Prototype figures are illustrative.";
+ $("s3").innerHTML='<div class="card"><h2>Decision summary</h2><pre id="txt">'+E(t)+'</pre><button class="btn" id="cp">Copy summary</button> <span id="ok" class="hint"></span></div>';
+ $("cp").onclick=function(){function sel2(){var r=document.createRange();r.selectNodeContents($("txt"));var s=getSelection();s.removeAllRanges();s.addRange(r);$("ok").textContent="Selected. Press Ctrl+C to copy."}
+  try{navigator.clipboard.writeText(t).then(function(){$("ok").textContent="Copied."},sel2)}catch(e){sel2()}}}
+
+function show(n){[1,2,3].forEach(function(i){$("s"+i).hidden=i!=n;$("t"+i).setAttribute("aria-selected",i==n)});
+ if(n==2)renderCompare();if(n==3)renderSummary();window.scrollTo(0,0)}
+[1,2,3].forEach(function(i){$("t"+i).onclick=function(){show(i)}});
+$("go").onclick=function(){show(2)};
+$("qty").value=S.qty;fillCat();fillMat();fillDeps();renderQuotes();
+</script>
+</body>
+</html>
